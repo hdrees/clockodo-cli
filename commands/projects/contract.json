@@ -1,0 +1,52 @@
+{
+  "summary": "List and get projects",
+  "actions": {
+    "get": {
+      "summary": "Show a single project by ID (full field set).",
+      "usage": "clockodo projects get <id>",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "description": "Project ID."
+        }
+      ],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v4/projects/{id} (served from a fresh list cache with CACHE=1)",
+      "curl": "supported",
+      "data": "The project object (full API payload).",
+      "error_codes": [
+        "http_404",
+        "invalid_argument",
+        "missing_argument"
+      ]
+    },
+    "list": {
+      "summary": "List projects, all pages. Text mode shows ID and name only.",
+      "usage": "clockodo projects list [--state active|inactive|all]",
+      "arguments": [],
+      "options": [
+        {
+          "name": "--state",
+          "value": "active|inactive|all",
+          "default": "active",
+          "description": "Filter by the active flag."
+        }
+      ],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v4/projects (paginated, cached with CACHE=1)",
+      "curl": "partial",
+      "notes": [
+        "--curl prints page 1 only."
+      ],
+      "data": "Array of project objects (full API payload).",
+      "error_codes": [
+        "invalid_argument"
+      ]
+    }
+  }
+}

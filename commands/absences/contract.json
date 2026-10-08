@@ -1,0 +1,52 @@
+{
+  "summary": "List and get absences",
+  "actions": {
+    "get": {
+      "summary": "Show a single absence by ID (full field set).",
+      "usage": "clockodo absences get <id>",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "description": "Absence ID."
+        }
+      ],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v4/absences/{id}",
+      "curl": "supported",
+      "data": "The absence object (full API payload).",
+      "error_codes": [
+        "http_404",
+        "invalid_argument",
+        "missing_argument"
+      ]
+    },
+    "list": {
+      "summary": "List absences of all users, of the authenticated user (me) or of one user.",
+      "usage": "clockodo absences list [me|<user-id>]",
+      "arguments": [
+        {
+          "name": "user",
+          "type": "me|integer",
+          "required": false,
+          "description": "me = authenticated user, a number = that user. Default: all users the API key may see."
+        }
+      ],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v4/absences (not cached); me adds GET /v4/users/me",
+      "curl": "partial",
+      "notes": [
+        "me is rejected with --curl; pass a numeric user ID."
+      ],
+      "data": "Array of absence objects (full API payload). Contains personal data of every listed user.",
+      "error_codes": [
+        "invalid_argument"
+      ]
+    }
+  }
+}

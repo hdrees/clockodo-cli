@@ -1,0 +1,103 @@
+{
+  "cli": "clockodo",
+  "summary": "Bash CLI for the Clockodo API",
+  "usage": "clockodo <group> <action> [arguments] [global flags]",
+  "global_flags": [
+    {
+      "name": "--json",
+      "description": "Emit exactly one JSON envelope on stdout and nothing on stderr. Interactive pickers are disabled; missing input fails with code missing_argument."
+    },
+    {
+      "name": "--curl",
+      "description": "Print the curl command of the first request instead of sending it, then exit 0. Contains the API key in clear text. Wins over --json and --dry-run."
+    },
+    {
+      "name": "--dry-run",
+      "description": "Report write requests (POST, DELETE) instead of sending them, then exit 0. Read requests such as lookups still run. Shows no credentials."
+    },
+    {
+      "name": "--help",
+      "description": "Print the text help of the group (also -h). Wins over --json."
+    }
+  ],
+  "environment": [
+    {"name": "CLOCKODO_API_USER", "required": true, "description": "Clockodo login email."},
+    {"name": "CLOCKODO_API_KEY", "required": true, "description": "Clockodo API key."},
+    {"name": "CLOCKODO_API_URL", "required": false, "default": "https://my.clockodo.com/api", "description": "API base URL."},
+    {"name": "CLOCKODO_ENV_FILE", "required": false, "description": "Env file to read instead of the repo .env."},
+    {"name": "CLOCKODO_EXTERNAL_APPLICATION", "required": false, "description": "Value of the X-Clockodo-External-Application header (\"<app>;<email>\")."},
+    {"name": "CLOCKODO_READ_ONLY", "required": false, "default": "0", "description": "1 = refuse every write request (error code read_only). --dry-run still works."},
+    {"name": "CACHE", "required": false, "default": "0", "description": "1 = cache list endpoints on disk."},
+    {"name": "DEBUG", "required": false, "default": "0", "description": "1 = dump requests and responses to stderr (ignored with --json)."}
+  ],
+  "envelope": {
+    "success": {"status": "success", "data": "<result>"},
+    "failure": {"status": "failure", "data": null, "error": {"message": "<text>", "code": "<code>", "http_status": "<int, API errors only>", "body": "<API response, API errors only>"}}
+  },
+  "error_codes": {
+    "configuration_error": "CLOCKODO_API_USER / CLOCKODO_API_KEY missing or CLOCKODO_ENV_FILE not found; run clockodo doctor.",
+    "http_<status>": "The API answered with HTTP >= 400; see error.http_status and error.body.",
+    "internal_error": "Missing tool (curl, jq) or a broken installation.",
+    "invalid_argument": "An argument or option has an invalid value.",
+    "invalid_response": "The API answered with a success status but no valid JSON.",
+    "missing_argument": "A required argument is missing (also: an interactive picker would be needed).",
+    "network_error": "No HTTP response at all (DNS, connection, timeout).",
+    "read_only": "A write request was refused because CLOCKODO_READ_ONLY=1.",
+    "unknown_command": "Unknown group or action."
+  },
+  "commands": {
+    "describe": {
+      "summary": "Machine-readable contracts of all commands.",
+      "usage": "clockodo describe [<group> [<action>]]",
+      "arguments": [
+        {"name": "group", "type": "string", "required": false, "description": "Command group or top-level command."},
+        {"name": "action", "type": "string", "required": false, "description": "Action of the group."}
+      ],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "none",
+      "curl": "unsupported",
+      "data": "Without arguments: this root contract plus the list of groups. With a group: the group contract. With group and action: the action contract.",
+      "error_codes": ["unknown_command"]
+    },
+    "doctor": {
+      "summary": "Check tools, configuration and API access.",
+      "usage": "clockodo doctor",
+      "arguments": [],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v4/users/me (response body is discarded)",
+      "curl": "unsupported",
+      "data": "{healthy: bool, checks: [{name, status: ok|warn|fail|skip, message}]}. Exit code 1 when healthy is false.",
+      "error_codes": []
+    },
+    "upgrade": {
+      "summary": "Fast-forward the git checkout to origin/main.",
+      "usage": "clockodo upgrade [--dry-run]",
+      "arguments": [],
+      "options": [
+        {"name": "--dry-run", "description": "Fetch only and report whether an update is available."}
+      ],
+      "writes": false,
+      "interactive": false,
+      "requests": "git fetch origin main",
+      "curl": "unsupported",
+      "data": "{status: up_to_date|upgraded|update_available|ahead, previous_version, current_version, previous_commit, current_commit, commits}",
+      "error_codes": ["diverged", "dirty_worktree", "fetch_failed", "missing_dependency", "not_a_git_checkout", "not_on_main", "upgrade_failed"]
+    },
+    "version": {
+      "summary": "Show the local and the published CLI version.",
+      "usage": "clockodo version",
+      "arguments": [],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET of the entry script on GitHub (no credentials)",
+      "curl": "supported",
+      "data": "{local, remote, status: up_to_date|update_available|ahead}",
+      "error_codes": ["invalid_response", "repository_unreachable"]
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "summary": "List and get services",
+  "actions": {
+    "get": {
+      "summary": "Show a single service by ID (full field set).",
+      "usage": "clockodo services get <id>",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": true,
+          "description": "Service ID."
+        }
+      ],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v4/services/{id} (served from a fresh list cache with CACHE=1)",
+      "curl": "supported",
+      "data": "The service object (full API payload).",
+      "error_codes": [
+        "http_404",
+        "invalid_argument",
+        "missing_argument"
+      ]
+    },
+    "list": {
+      "summary": "List services, all pages. Text mode shows ID and name only.",
+      "usage": "clockodo services list [--state active|inactive|all]",
+      "arguments": [],
+      "options": [
+        {
+          "name": "--state",
+          "value": "active|inactive|all",
+          "default": "active",
+          "description": "Filter by the active flag."
+        }
+      ],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v4/services (paginated, cached with CACHE=1)",
+      "curl": "partial",
+      "notes": [
+        "--curl prints page 1 only."
+      ],
+      "data": "Array of service objects (full API payload).",
+      "error_codes": [
+        "invalid_argument"
+      ]
+    }
+  }
+}

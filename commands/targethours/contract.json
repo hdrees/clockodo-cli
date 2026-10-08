@@ -1,0 +1,30 @@
+{
+  "summary": "List and get target hours",
+  "actions": {
+    "get": {
+      "summary": "Show a single target hours rule by ID (full field set).",
+      "usage": "clockodo targethours get <id>",
+      "arguments": [{"name": "id", "type": "integer", "required": true, "description": "Target hours rule ID."}],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /targethours/{id} (not cached)",
+      "curl": "supported",
+      "data": "The target hours rule object (full API payload).",
+      "error_codes": ["http_404", "invalid_argument", "missing_argument"]
+    },
+    "list": {
+      "summary": "List target hours rules of all users, of the authenticated user (me) or of one user.",
+      "usage": "clockodo targethours list [me|<user-id>]",
+      "arguments": [{"name": "user", "type": "me|integer", "required": false, "description": "me = authenticated user, a number = that user. Default: all users the API key may see."}],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /targethours (cached with CACHE=1); me adds GET /v4/users/me",
+      "curl": "partial",
+      "notes": ["me is rejected with --curl; pass a numeric user ID."],
+      "data": "Array of target hours rule objects (full API payload).",
+      "error_codes": ["invalid_argument"]
+    }
+  }
+}

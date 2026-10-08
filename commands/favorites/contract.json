@@ -1,0 +1,45 @@
+{
+  "summary": "List and start favorites",
+  "actions": {
+    "list": {
+      "summary": "List favorites in their user-defined order (ID and name in text mode).",
+      "usage": "clockodo favorites list",
+      "arguments": [],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v2/favorites (cached with CACHE=1)",
+      "curl": "supported",
+      "data": "Array of favorite objects (full API payload).",
+      "error_codes": []
+    },
+    "start": {
+      "summary": "Start the clock with a favorite.",
+      "usage": "clockodo favorites start [<id>]",
+      "arguments": [
+        {
+          "name": "id",
+          "type": "integer",
+          "required": false,
+          "description": "Favorite ID. Without it a bash select picker is shown (text mode only)."
+        }
+      ],
+      "options": [],
+      "writes": true,
+      "interactive": true,
+      "requests": "POST /v2/favorites/{id}/start; the picker adds GET /v2/favorites",
+      "curl": "partial",
+      "notes": [
+        "--json and --curl require an ID.",
+        "--dry-run reports the POST without sending it.",
+        "Refused with CLOCKODO_READ_ONLY=1."
+      ],
+      "data": "API response without data wrapper; the started entry is in .running.",
+      "error_codes": [
+        "invalid_argument",
+        "missing_argument",
+        "read_only"
+      ]
+    }
+  }
+}

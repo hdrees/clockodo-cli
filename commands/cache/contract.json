@@ -1,0 +1,56 @@
+{
+  "summary": "List, delete, and clear local cache entries",
+  "actions": {
+    "clear": {
+      "summary": "Delete every cache entry of the configured account.",
+      "usage": "clockodo cache clear",
+      "arguments": [],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "none (local files only)",
+      "curl": "unsupported",
+      "data": "{deleted_entries: <count>}",
+      "error_codes": [
+        "invalid_argument"
+      ]
+    },
+    "delete": {
+      "summary": "Delete one cache entry by key (from cache list) or endpoint path.",
+      "usage": "clockodo cache delete <key|path>",
+      "arguments": [
+        {
+          "name": "key",
+          "type": "string",
+          "required": true,
+          "description": "Cache key such as v3_customers, or an endpoint path such as /v3/customers."
+        }
+      ],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "none (local files only)",
+      "curl": "unsupported",
+      "data": "{deleted: <key>}",
+      "error_codes": [
+        "invalid_argument",
+        "missing_argument",
+        "not_found"
+      ]
+    },
+    "list": {
+      "summary": "Statistics of every cache entry: key, items, size, age, TTL, remaining TTL. No cached content.",
+      "usage": "clockodo cache list",
+      "arguments": [],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "none (local files only)",
+      "curl": "unsupported",
+      "data": "Array of cache entry statistics.",
+      "error_codes": [
+        "invalid_argument"
+      ]
+    }
+  }
+}

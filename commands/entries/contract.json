@@ -1,0 +1,65 @@
+{
+  "summary": "List, get, summarize, and stop time entries",
+  "actions": {
+    "get": {
+      "summary": "Show a single time entry by ID (full field set).",
+      "usage": "clockodo entries get <id>",
+      "arguments": [{"name": "id", "type": "integer", "required": true, "description": "Time entry ID."}],
+      "options": [],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v2/entries/{id}",
+      "curl": "supported",
+      "data": "The time entry object (unwrapped from .entry).",
+      "error_codes": ["http_404", "invalid_argument", "missing_argument"]
+    },
+    "list": {
+      "summary": "List time entries of a time range (default: today), or show the running clock entry.",
+      "usage": "clockodo entries list [--me|--user <id>] [--since <date>] [--until <date>] | clockodo entries list --running",
+      "arguments": [],
+      "options": [
+        {"name": "--me", "description": "Only entries of the authenticated user. Exclusive with --user."},
+        {"name": "--user", "value": "integer", "description": "Only entries of this user. Exclusive with --me."},
+        {"name": "--since", "value": "YYYY-MM-DD|YYYY-MM-DDTHH:MM:SSZ", "default": "today", "description": "Start of the range, inclusive (local day or UTC timestamp)."},
+        {"name": "--until", "value": "YYYY-MM-DD|YYYY-MM-DDTHH:MM:SSZ", "default": "same as --since", "description": "End of the range; a local day includes the whole day."},
+        {"name": "--running", "description": "Show the running clock entry of the authenticated user. Not combinable with the other options."}
+      ],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v2/entries (enhanced list, paginated, not cached, rate limit 300 requests / 15 min); --me adds GET /v4/users/me; --running uses GET /v2/clock",
+      "curl": "partial",
+      "notes": ["--me is rejected with --curl; use --user <id>.", "--curl prints page 1 only."],
+      "data": "Array of time entry objects (unwrapped from .entries); with --running the /v2/clock response.",
+      "error_codes": ["invalid_argument", "missing_argument"]
+    },
+    "stop": {
+      "summary": "Stop the running clock entry.",
+      "usage": "clockodo entries stop [<id>]",
+      "arguments": [{"name": "id", "type": "integer", "required": false, "description": "Clock entry ID. Without it the running entry of the authenticated user is looked up."}],
+      "options": [],
+      "writes": true,
+      "interactive": false,
+      "requests": "DELETE /v2/clock/{id}; without an ID GET /v2/clock first",
+      "curl": "partial",
+      "notes": ["--curl requires an ID.", "--dry-run runs the lookup and reports the DELETE without sending it.", "Refused with CLOCKODO_READ_ONLY=1."],
+      "data": "API response without data wrapper; the stopped entry is in .stopped.",
+      "error_codes": ["invalid_argument", "missing_argument", "not_running", "read_only"]
+    },
+    "summary": {
+      "summary": "Day summary of one user: total time incl. the running entry, start of day, target hours, delta, percent.",
+      "usage": "clockodo entries summary [--me|--user <id>] [--date <YYYY-MM-DD>]",
+      "arguments": [],
+      "options": [
+        {"name": "--me", "default": "on", "description": "Summary of the authenticated user. Exclusive with --user."},
+        {"name": "--user", "value": "integer", "description": "Summary of this user. Exclusive with --me."},
+        {"name": "--date", "value": "YYYY-MM-DD", "default": "today", "description": "Local calendar day."}
+      ],
+      "writes": false,
+      "interactive": false,
+      "requests": "GET /v2/entries for the day; GET /targethours and (with --me) GET /v4/users/me, both cached with CACHE=1",
+      "curl": "unsupported",
+      "data": "{date, users_id, current_time, count_entries, total_seconds, start_of_day, running, target_seconds, delta_seconds, percent}; all durations in seconds, target fields null without a weekly rule.",
+      "error_codes": ["invalid_argument", "missing_argument"]
+    }
+  }
+}
