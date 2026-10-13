@@ -27,12 +27,15 @@
     {"name": "CLOCKODO_ENV_FILE", "required": false, "description": "Env file to read instead of the repo .env."},
     {"name": "CLOCKODO_EXTERNAL_APPLICATION", "required": false, "description": "Value of the X-Clockodo-External-Application header (\"<app>;<email>\")."},
     {"name": "CLOCKODO_READ_ONLY", "required": false, "default": "0", "description": "1 = refuse every write request (error code read_only). --dry-run still works."},
+    {"name": "CLOCKODO_TIMEOUT", "required": false, "default": "30", "description": "Maximum time per API request in seconds (connect timeout: 10). A timeout fails with code network_error. Invalid values fall back to the default."},
+    {"name": "CLOCKODO_TRACE", "required": false, "default": "0", "description": "1 = with --json, add meta.requests to the envelope (method, path, source, status, duration_ms per request; no headers or bodies). Ignored without --json."},
     {"name": "CACHE", "required": false, "default": "0", "description": "1 = cache list endpoints on disk."},
     {"name": "DEBUG", "required": false, "default": "0", "description": "1 = dump requests and responses to stderr (ignored with --json)."}
   ],
   "envelope": {
     "success": {"status": "success", "data": "<result>"},
-    "failure": {"status": "failure", "data": null, "error": {"message": "<text>", "code": "<code>", "http_status": "<int, API errors only>", "body": "<API response, API errors only>"}}
+    "failure": {"status": "failure", "data": null, "error": {"message": "<text>", "code": "<code>", "http_status": "<int, API errors only>", "body": "<API response, API errors only>"}},
+    "meta": {"requests": "<only with CLOCKODO_TRACE=1, on success and failure: [{method, path (with query string), source: api|cache, status: int|null (0 = no response, null = cache), duration_ms: int|null}]>"}
   },
   "error_codes": {
     "configuration_error": "CLOCKODO_API_USER / CLOCKODO_API_KEY missing or CLOCKODO_ENV_FILE not found; run clockodo doctor.",

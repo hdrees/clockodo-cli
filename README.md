@@ -197,6 +197,32 @@ DEBUG=1 CACHE=1 ./clockodo customers list
 - The API key is truncated to its first 4 characters in the dump.
 - Response bodies contain the full API data (e.g. names, email addresses, absences). Do not paste debug output into tickets, chats or logs without reviewing it.
 
+### Request trace in `--json` mode (`CLOCKODO_TRACE`)
+
+`DEBUG` stays silent in `--json` mode. A calling tool that wants to log what the CLI did sets `CLOCKODO_TRACE=1` instead: every envelope (success and failure) then carries `meta.requests`, one object per request in order:
+
+```bash
+CLOCKODO_TRACE=1 CACHE=1 ./clockodo entries summary --json | jq '.meta.requests'
+```
+```json
+[
+  {"method": "GET", "path": "/v4/users/me", "source": "cache", "status": null, "duration_ms": null},
+  {"method": "GET", "path": "/v2/entries?time_since=…&time_until=…&enhanced_list=1&filter%5Busers_id%5D=…&page=1&items_per_page=1000", "source": "api", "status": 200, "duration_ms": 412}
+]
+```
+
+- `source` is `api` for a sent request and `cache` for one served from the cache (`status` and `duration_ms` are `null` then). `status` 0 means no HTTP response (e.g. a timeout).
+- No headers and no bodies, so no credentials and no response data. The path keeps its query string, which can hold IDs and dates.
+- Requests that were not sent (`--dry-run`, `--curl`, refused by `CLOCKODO_READ_ONLY`) are not listed.
+
+## Timeouts (`CLOCKODO_TIMEOUT`)
+
+Every API request gives up after 10 seconds without a connection and after `CLOCKODO_TIMEOUT` seconds in total (default 30; per page for paginated lists). A timeout is reported like any other request without a response: error on stderr, exit code 1, in `--json` mode the code `network_error`.
+
+```bash
+CLOCKODO_TIMEOUT=5 ./clockodo entries summary
+```
+
 ## Print curl instead of sending (`--curl`)
 
 With the global `--curl` flag the CLI sends **nothing** to the API. It prints the `curl` command it would have sent and exits. The flag works with every action and can be placed anywhere on the command line.

@@ -76,6 +76,35 @@ is_debug_enabled() {
     [[ "${DEBUG:-0}" == "1" ]] && ! is_json_output_mode
 }
 
+# is_trace_enabled
+#   Returns 0 when CLOCKODO_TRACE=1 and --json is active: every JSON
+#   envelope then carries `meta.requests` (see clockodo_trace_request in
+#   lib/http.sh). The --json counterpart of DEBUG, without headers or
+#   bodies. Read lazily, because .env is loaded after this file is sourced.
+is_trace_enabled() {
+    [[ "${CLOCKODO_TRACE:-0}" == "1" ]] && is_json_output_mode
+}
+
+# _add_trace_meta
+#   Filter for a JSON envelope on stdin: adds `meta.requests` (one object
+#   per request, in order) when tracing is enabled, passes it through
+#   unchanged otherwise. Before the first request — or without lib/http.sh
+#   (e.g. errors of the entry script) — the list is empty.
+#   stdin:   envelope
+#   stdout:  envelope, with `meta` when tracing
+_add_trace_meta() {
+    if ! is_trace_enabled; then
+        cat
+        return 0
+    fi
+
+    # `--slurpfile` reads every JSON value of the file into an array;
+    # /dev/null yields an empty one.
+    local trace_file="${CLOCKODO_REQUEST_TRACE_FILE:-}"
+    [[ -n "${trace_file}" && -f "${trace_file}" ]] || trace_file="/dev/null"
+    jq --slurpfile requests "${trace_file}" '. + {meta: {requests: $requests}}'
+}
+
 # emit_argument_error
 #   Reports an invalid or missing CLI argument: a failure envelope in --json
 #   mode, otherwise "Error: <message>" on stderr.
@@ -150,7 +179,7 @@ emit_api_failure() {
 #   large lists exceed ("Argument list too long").
 emit_json_success() {
     local data="${1:-null}"
-    jq '{status:"success", data:.}' <<<"${data}"
+    jq '{status:"success", data:.}' <<<"${data}" | _add_trace_meta
 }
 
 # emit_json_data
@@ -207,5 +236,5 @@ emit_json_failure() {
         fi
     fi
 
-    jq -n --argjson error "${error_json}" '{status:"failure", data:null, error:$error}'
+    jq -n --argjson error "${error_json}" '{status:"failure", data:null, error:$error}' | _add_trace_meta
 }

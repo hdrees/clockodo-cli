@@ -251,6 +251,7 @@ _cache_through() {
 
     if _cache_is_fresh "${file}" "${ttl}"; then
         _cache_log HIT "${path} (age $(_cache_age_seconds "${file}")s, ttl ${ttl}s)"
+        clockodo_trace_request GET "${path}" cache
         cat "${file}"
         return 0
     fi
@@ -339,6 +340,7 @@ clockodo_api_get_cached_via_list() {
         # `${hit%%$'\t'*}` = file name before the tab, `${hit#*$'\t'}` = item.
         list_file="${hit%%$'\t'*}"
         _cache_log "HIT (from list)" "id ${id} found in ${list_file##*/} (age $(_cache_age_seconds "${list_file}")s)"
+        clockodo_trace_request GET "${detail_path}" cache
         # Wrap to mirror the detail endpoint's shape: { "data": <item> }.
         jq -c '{data:.}' <<<"${hit#*$'\t'}"
         return 0
