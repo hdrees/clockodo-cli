@@ -49,6 +49,9 @@ Global flags:
 Environment:
   CACHE=1               Cache list endpoints on disk for 300s (default: off)
   CLOCKODO_READ_ONLY=1  Refuse every write request (default: off)
+  CLOCKODO_TIMEOUT=<s>  Maximum time per API request in seconds (default: 30)
+  CLOCKODO_TRACE=1      With --json: list the requests in meta.requests
+                        (method, path, source, status, duration; default: off)
   DEBUG=1               Dump HTTP requests/responses and cache hits to stderr
                         (ignored with --json)
 

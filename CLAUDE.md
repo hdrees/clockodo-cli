@@ -93,6 +93,7 @@ shared parsers) is automatically available to all actions of that group.
 - Optional: `CACHE` (`1` = on, default off) — see "Caching".
 - Optional: `DEBUG` (`1` = on, default off) — see "Debug mode".
 - Optional: `CLOCKODO_READ_ONLY` (`1` = refuse writes, default off) — see "Write guards".
+- Optional: `CLOCKODO_TIMEOUT` (seconds per request, default 30; connect timeout 10) and `CLOCKODO_TRACE` (`1` = `meta.requests` in `--json` envelopes) — see "JSON output mode".
 - Values from the command line win over `.env` (`.env` provides defaults only).
 - `CLOCKODO_EXTERNAL_APP` is generated automatically in `lib/env.sh` as
   `clockodo-cli/<CLOCKODO_CLI_VERSION>;<CLOCKODO_API_USER>` — do not store it in `.env`.
@@ -114,6 +115,7 @@ shared parsers) is automatically available to all actions of that group.
   - failure: `{ "status": "failure", "data": null, "error": { "message": "...", "code": "...", "http_status": <int>, "body": <json> } }` — `http_status` and `body` are present only for API errors (HTTP ≥ 400).
   - Failure codes of API requests: `http_<status>` (HTTP ≥ 400), `network_error` (no HTTP response; the curl error is the message), `invalid_response` (success status but non-JSON body).
 - In `--json` mode no human-readable text is written to stdout or stderr (DEBUG included).
+- With `CLOCKODO_TRACE=1` every envelope carries `meta.requests` (`{method, path, source: api|cache, status, duration_ms}`), appended by `clockodo_trace_request` (`lib/http.sh`, also called by `lib/cache.sh` for cache hits) and added in `emit_json_success`/`emit_json_failure`. No headers, no bodies.
 - Interactive UI (bash-select pickers) is disabled in `--json` mode. Actions that would require user input return a failure envelope with code `missing_argument`.
 - `--help` / `-h` always prints text help, even when combined with `--json`.
 - Helpers in `lib/helper.sh`:

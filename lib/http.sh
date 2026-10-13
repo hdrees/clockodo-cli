@@ -58,6 +58,17 @@ CLOCKODO_CURL_ERROR_FILE="${CLOCKODO_RUNTIME_DIR}/curl-error"
 # list (`ps`, /proc/<pid>/cmdline).
 CLOCKODO_REQUEST_BODY_FILE="${CLOCKODO_RUNTIME_DIR}/request-body"
 
+# Request trace of this run (CLOCKODO_TRACE=1 with --json): one JSON object
+# per line, appended by clockodo_trace_request and read by _add_trace_meta
+# (lib/helper.sh). A file for the same reason as the state file.
+CLOCKODO_REQUEST_TRACE_FILE="${CLOCKODO_RUNTIME_DIR}/request-trace"
+
+# Timeouts of API requests in seconds. CLOCKODO_TIMEOUT overrides the total
+# time per request (see _clockodo_request_timeout); a paginated list gets it
+# per page.
+CLOCKODO_CONNECT_TIMEOUT=10
+DEFAULT_REQUEST_TIMEOUT=30
+
 # Cleanup on every exit. Bash runs no EXIT trap when killed by INT/TERM, so
 # those are turned into regular exits (128 + signal number) first.
 trap 'rm -rf "${CLOCKODO_RUNTIME_DIR}"' EXIT
@@ -88,6 +99,45 @@ _clockodo_record_response() {
         printf '%s\n' "$1"
         printf '%s' "$2"
     } > "${CLOCKODO_HTTP_STATE_FILE}"
+}
+
+# _clockodo_request_timeout
+#   Prints the maximum time per API request in seconds: CLOCKODO_TIMEOUT,
+#   or DEFAULT_REQUEST_TIMEOUT when unset or not a positive integer (same
+#   fallback as CLOCKODO_ITEMS_PER_PAGE in lib/pagination.sh).
+_clockodo_request_timeout() {
+    local requested="${CLOCKODO_TIMEOUT:-${DEFAULT_REQUEST_TIMEOUT}}"
+    [[ "${requested}" =~ ^[1-9][0-9]*$ ]] || requested="${DEFAULT_REQUEST_TIMEOUT}"
+    printf '%s' "${requested}"
+}
+
+# clockodo_trace_request
+#   CLOCKODO_TRACE=1 with --json: appends one request to the trace file —
+#   {method, path, source, status, duration_ms}. No headers, no bodies; the
+#   path keeps its query string (IDs, dates). Does nothing otherwise.
+#   Called by _clockodo_request for sent requests and by lib/cache.sh for
+#   requests served from the cache.
+#   args:  $1 = method, $2 = path, $3 = source (`api` | `cache`),
+#          $4 = HTTP status (0 = no response; empty or non-numeric → null),
+#          $5 = duration in seconds as reported by curl's %{time_total}
+#               (empty or non-numeric → null)
+clockodo_trace_request() {
+    is_trace_enabled || return 0
+    local method="$1" path="$2" source="$3" status="${4:-}" seconds="${5:-}"
+
+    # Only clean numbers reach `tonumber`, which would abort on anything else.
+    [[ "${status}" =~ ^[0-9]+$ ]] || status=""
+    [[ "${seconds}" =~ ^[0-9]+(\.[0-9]+)?$ ]] || seconds=""
+
+    # `-c` keeps the object on one line (one request per line).
+    jq -nc --arg method "${method}" --arg path "${path}" --arg source "${source}" \
+        --arg status "${status}" --arg seconds "${seconds}" '{
+            method: $method,
+            path: $path,
+            source: $source,
+            status: (if $status == "" then null else ($status | tonumber) end),
+            duration_ms: (if $seconds == "" then null else ($seconds | tonumber * 1000 | round) end)
+        }' >> "${CLOCKODO_REQUEST_TRACE_FILE}"
 }
 
 # _clockodo_request_headers
@@ -339,15 +389,21 @@ _clockodo_request() {
     #                would turn every HTTP error into a transport failure).
     #   --header @-  reads the headers from stdin, so the API key does not
     #                show up in the process list (`ps`, /proc/<pid>/cmdline).
-    #   --write-out '\n%{http_code}' appends a newline plus the HTTP status
-    #                after the body; we split them apart below.
+    #   --connect-timeout / --max-time  keep an unreachable or hanging API
+    #                from blocking the CLI; a timeout is a transport failure
+    #                (code `network_error`).
+    #   --write-out '\n%{http_code} %{time_total}' appends a newline, the
+    #                HTTP status and the duration in seconds after the body;
+    #                we split them apart below.
     #   --data-binary @file  sends the body from the private runtime dir,
     #                byte for byte (plain `--data @file` would strip newlines).
     local curl_args=(
         --disable
         --silent
         --show-error
-        --write-out '\n%{http_code}'
+        --connect-timeout "${CLOCKODO_CONNECT_TIMEOUT}"
+        --max-time "$(_clockodo_request_timeout)"
+        --write-out '\n%{http_code} %{time_total}'
         --request "${method}"
         --header @-
     )
@@ -362,19 +418,26 @@ _clockodo_request() {
     local response curl_exit=0
     response="$(curl "${curl_args[@]}" "${url}" <<<"${headers}" 2>"${CLOCKODO_CURL_ERROR_FILE}")" || curl_exit=$?
 
+    local write_out status seconds
+    # `${var##*$'\n'}` = strip everything up to the last newline → the
+    # write-out line "<status> <seconds>" remains.
+    write_out="${response##*$'\n'}"
+    # `${var%$'\n'*}`  = strip from the last newline onwards → body remains.
+    response="${response%$'\n'*}"
+    # `%% *` = up to the first space, `#* ` = after it.
+    status="${write_out%% *}"
+    seconds="${write_out#* }"
+
     # --- Transport failure (no HTTP response at all) -----------------------
     # Connection refused, DNS failure, timeout, … — curl still writes
     # `%{http_code}` as "000", which must not pass as success.
     if (( curl_exit != 0 )); then
+        clockodo_trace_request "${method}" "${path}" api 0 "${seconds}"
         _clockodo_handle_transport_failure "${method}" "${path}" "${curl_exit}" "$(cat "${CLOCKODO_CURL_ERROR_FILE}")"
         return 1
     fi
 
-    local status
-    # `${var##*$'\n'}` = strip everything up to the last newline → status remains.
-    status="${response##*$'\n'}"
-    # `${var%$'\n'*}`  = strip from the last newline onwards → body remains.
-    response="${response%$'\n'*}"
+    clockodo_trace_request "${method}" "${path}" api "${status}" "${seconds}"
 
     if is_debug_enabled; then
         _print_debug_response "${status}" "${response}"
