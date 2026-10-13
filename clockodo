@@ -22,7 +22,7 @@ set -euo pipefail
 
 # Current CLI version. Embedded by lib/env.sh into the
 # X-Clockodo-External-Application header.
-CLOCKODO_CLI_VERSION="0.1.0"
+CLOCKODO_CLI_VERSION="0.2.0"
 export CLOCKODO_CLI_VERSION
 
 # resolve_script_path
