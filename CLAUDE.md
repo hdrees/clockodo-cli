@@ -41,6 +41,9 @@ Current version: **0.2.0** (maintained in [clockodo](clockodo) as `CLOCKODO_CLI_
 - `commands/<group>/ui.sh` — group-specific renderers and interactive pickers (e.g. `print_favorites_table`, `select_favorite`). Optional — groups that only need `print_id_name_table` have none.
 - `commands/<group>/contract.json` — machine-readable contract of every action of the group (`clockodo describe`).
 - `skills/clockodo-cli/SKILL.md` — agent skill; refers to `describe` instead of repeating command details.
+- `.github/workflows/clockodo-api-check.yml` + `.github/scripts/check-clockodo-api.sh` — nightly check of
+  https://docs.clockodo.com/openapi.yaml against `.github/clockodo-api-snapshot.json` (version + operations);
+  opens an issue on change. Accept a new state with `check-clockodo-api.sh --update`.
 
 The entry script sources every `.sh` file inside `commands/<group>/` before
 the action file runs, so any additional group-local file (helpers, prompts,
