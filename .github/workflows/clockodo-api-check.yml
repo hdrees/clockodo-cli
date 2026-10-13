@@ -1,0 +1,59 @@
+# Nightly check whether the published Clockodo OpenAPI spec
+# (https://docs.clockodo.com/openapi.yaml) changed against the snapshot in
+# .github/clockodo-api-snapshot.json. On a change it opens one issue per new
+# state (label `clockodo-api`); an open issue with the same title is not
+# duplicated. Accept a new state with `.github/scripts/check-clockodo-api.sh --update`.
+name: Clockodo API check
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # 03:17 UTC, off the full hour to avoid scheduler congestion
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: clockodo-api-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare spec with snapshot
+        id: compare
+        run: |
+          # Exit code 2 means "changed"; it must not fail the step, so it is
+          # captured instead of letting `bash -e` abort.
+          status=0
+          .github/scripts/check-clockodo-api.sh > report.md || status=$?
+          case "${status}" in
+            0) echo "changed=false" >> "${GITHUB_OUTPUT}" ;;
+            2) echo "changed=true" >> "${GITHUB_OUTPUT}"
+               cat report.md >> "${GITHUB_STEP_SUMMARY}" ;;
+            *) exit "${status}" ;;
+          esac
+
+      - name: Open issue
+        if: steps.compare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          known_version="$(jq --raw-output '.version' .github/clockodo-api-snapshot.json)"
+          title="Clockodo API changed (snapshot ${known_version}, checked $(date --utc +%F))"
+          # The title carries the check date, so search by the label + snapshot
+          # version: one open issue per known snapshot is enough.
+          gh label create clockodo-api --color 3d2a5a \
+            --description "Clockodo OpenAPI spec changed" --force
+          open_issues="$(gh issue list --label clockodo-api --state open \
+            --search "in:title \"snapshot ${known_version}\"" --json number --jq 'length')"
+          if [[ "${open_issues}" -gt 0 ]]; then
+            echo "An open issue for snapshot ${known_version} exists — not opening another."
+            exit 0
+          fi
+          gh issue create --title "${title}" --label clockodo-api --body-file report.md
