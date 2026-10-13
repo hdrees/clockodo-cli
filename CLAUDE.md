@@ -202,3 +202,4 @@ their `_config.sh` — the reason is the data's volatility, not the cache key.
   - `X-ClockodoApiUser`
   - `X-ClockodoApiKey`
   - `X-Clockodo-External-Application` (format: `appname;email`)
+- `/v2/entries` selects entries by their start (`time_since` inside `time_since`…`time_until`), not by overlap: an entry that started before the range — also a clock still running since before midnight — is missing. `entries summary` covers the running case via `/v2/clock` (`_entries_fetch_carried_running`).
