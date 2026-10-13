@@ -56,9 +56,9 @@
       ],
       "writes": false,
       "interactive": false,
-      "requests": "GET /v2/entries for the day; GET /targethours and (with --me) GET /v4/users/me, both cached with CACHE=1",
+      "requests": "GET /v2/entries for the day; GET /targethours and (with --me) GET /v4/users/me, both cached with CACHE=1; with --me for today and no running entry in the day's list GET /v2/clock, and for a clock started before the day one more GET /v2/entries (its start up to the day start)",
       "curl": "unsupported",
-      "data": "{date, users_id, current_time, count_entries, total_seconds, start_of_day, running, target_seconds, delta_seconds, percent}; all durations in seconds, target fields null without a weekly rule.",
+      "data": "{date, users_id, current_time, count_entries, total_seconds, start_of_day, running, target_seconds, delta_seconds, percent}; all durations in seconds, target fields null without a weekly rule. running = time entry + {elapsed_seconds (whole elapsed time), started_before_day}, or null. A clock running since before the day counts from the day start (start_of_day = day start).",
       "error_codes": ["invalid_argument", "missing_argument"]
     }
   }

@@ -4,7 +4,7 @@ Modular Bash CLI for the Clockodo API.
 
 ## Version
 
-Current version: **0.1.0** (maintained in [clockodo](clockodo) as `CLOCKODO_CLI_VERSION`).
+Current version: **0.2.0** (maintained in [clockodo](clockodo) as `CLOCKODO_CLI_VERSION`).
 
 - Semver: MAJOR.MINOR.PATCH.
 - Bump the version on larger changes (new command group, breaking change to the CLI interface, new API endpoints).

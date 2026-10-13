@@ -122,7 +122,7 @@ print_entries_summary() {
             \"Percent:         \(if .percent == null then \"-\" else \"\(.percent)%\" end)\",
             (if .running == null then \"Running:         -\"
              else
-                \"Running:         entry ID \(.running.id) since \(.running.time_since | _local_time) (\(.running.elapsed_seconds | _duration))\",
+                \"Running:         entry ID \(.running.id) since \(.running.time_since | _local_time) (\(.running.elapsed_seconds | _duration))\(if .running.started_before_day then \", started before the day, counted from \(.start_of_day | _local_time)\" else \"\" end)\",
                 \"Running_path:    \(.running | _entry_path)\"
              end)
         )"

@@ -236,7 +236,7 @@ Output (credentials are your real values from `.env`):
 curl --silent \
   --header 'X-ClockodoApiUser: you@example.com' \
   --header 'X-ClockodoApiKey: <your API key>' \
-  --header 'X-Clockodo-External-Application: clockodo-cli/0.1.0;you@example.com' \
+  --header 'X-Clockodo-External-Application: clockodo-cli/0.2.0;you@example.com' \
   --header 'Accept: application/json' \
   'https://my.clockodo.com/api/v3/customers?filter%5Bactive%5D=false&page=1&items_per_page=1000' \
   | jq .
@@ -321,8 +321,9 @@ Run `./clockodo --help` for all groups and `./clockodo <group> --help` for their
 ```
 
 - `entries summary [--me|--user <id>] [--date YYYY-MM-DD]` sums the day incl. the running entry and compares it with the valid weekly target-hours rule (`target_seconds`, `delta_seconds`, `percent`; `null` for monthly rules or without a rule). All values are in seconds in `--json` mode. With `CACHE=1` and `--user <id>` a refresh costs a single API request (`/v2/entries`), which makes it suitable for status bars and dashboards.
+- A clock that is still running since before midnight counts towards today from midnight on (`running.started_before_day: true`, `start_of_day` is midnight; `running.elapsed_seconds` stays the whole elapsed time). For that, `--me` today checks `/v2/clock` whenever the day's list has no running entry — one more request; `--user <id>` and past days do not.
 
-- `--since` / `--until` accept a local calendar day (`YYYY-MM-DD`, `--until` includes the whole day) or a UTC timestamp (`YYYY-MM-DDTHH:MM:SSZ`). Default: today.
+- `--since` / `--until` accept a local calendar day (`YYYY-MM-DD`, `--until` includes the whole day) or a UTC timestamp (`YYYY-MM-DDTHH:MM:SSZ`). Default: today. The API selects entries by their **start**: an entry that started before `--since` is not listed, even if it overlaps the range.
 - `entries list` uses the enhanced list of the API (customer and project names). That variant has a stricter rate limit (300 requests per 15 minutes).
 
 ### Version

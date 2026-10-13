@@ -25,6 +25,8 @@ Actions:
                     time incl. the running entry, start of day, target
                     hours, delta and percent. One /v2/entries request;
                     /v4/users/me and /targethours are cached with CACHE=1.
+                    A clock running since before midnight counts from
+                    midnight (checked via /v2/clock for --me today).
                     Not supported with --curl.
   get <id>          Show a single time entry by its ID.
   stop [<id>]       Stop the running clock entry. Without an ID the running
